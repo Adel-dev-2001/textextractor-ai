@@ -1,0 +1,43 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+
+# Local Environment Variables & Secrets
+.env
+.env.local
+.env.*
+.env.*.local
+*.env
+
+# AI Logs, Prompt history, & Debug logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+migrated_prompt_history/
+prompt_history/
+.gemini/
+.antigravityignore
+antigravity-*.log
+
+# Editor & IDE Settings
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.bak
+*.backup
