@@ -58,7 +58,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The dev server also listens on your network (`host: 0.0.0.0`).
 
-To create a production build, run `npm run build`. The result is in `dist/`.
+To create a bundle, run `npm run build` (TypeScript validation, then Vite bundling). The result is in `dist/`. `npm run lint` runs the TypeScript check separately. A successful build does not make this client-key prototype safe for public deployment; see the security notes below.
 
 ---
 
