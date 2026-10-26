@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import type { MouseEvent } from 'react';
 import type { ImageFile } from '../types';
 import { geminiService } from '../services/geminiService';
 import { useTranslation, useSettings } from '../contexts/SettingsContext';
@@ -17,12 +18,16 @@ export const useImageProcessor = () => {
   const { t } = useTranslation();
   const { language } = useSettings();
 
-  // Revoke preview URLs on unmount
+  const previewUrlsRef = useRef(new Set<string>());
+
+  // A status or text update must not revoke an image that is still displayed.
   useEffect(() => {
+    const previewUrls = previewUrlsRef.current;
     return () => {
-      imageFiles.forEach(imageFile => URL.revokeObjectURL(imageFile.previewUrl));
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+      previewUrls.clear();
     };
-  }, [imageFiles]);
+  }, []);
 
   const handleFilesSelected = useCallback((files: File[]) => {
     const newImageFiles: ImageFile[] = files.map(file => ({
@@ -33,6 +38,7 @@ export const useImageProcessor = () => {
       extractedText: null,
       error: null,
     }));
+    newImageFiles.forEach(imageFile => previewUrlsRef.current.add(imageFile.previewUrl));
     setImageFiles(prev => [...prev, ...newImageFiles]);
     setGlobalError(null);
     
@@ -115,12 +121,13 @@ export const useImageProcessor = () => {
   }, [handleFilesSelected]);
 
   const removeFile = useCallback((idToRemove: string) => {
-    setImageFiles(prevFiles => {
-      const fileToRemove = prevFiles.find(f => f.id === idToRemove);
-      if (fileToRemove) URL.revokeObjectURL(fileToRemove.previewUrl);
-      return prevFiles.filter(f => f.id !== idToRemove);
-    });
-  }, []);
+    const fileToRemove = imageFiles.find(f => f.id === idToRemove);
+    if (fileToRemove) {
+      URL.revokeObjectURL(fileToRemove.previewUrl);
+      previewUrlsRef.current.delete(fileToRemove.previewUrl);
+    }
+    setImageFiles(prevFiles => prevFiles.filter(f => f.id !== idToRemove));
+  }, [imageFiles]);
 
   const updateFileText = useCallback((idToUpdate: string, newText: string) => {
     setImageFiles(prev => 
@@ -129,14 +136,13 @@ export const useImageProcessor = () => {
   }, []);
   
   const clearAll = useCallback(() => {
-    setImageFiles(prevFiles => {
-      prevFiles.forEach(imageFile => URL.revokeObjectURL(imageFile.previewUrl));
-      return [];
-    });
+    previewUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+    previewUrlsRef.current.clear();
+    setImageFiles([]);
     setGlobalError(null);
   }, []);
 
-  const handleLogoClick = useCallback((e: React.MouseEvent) => {
+  const handleLogoClick = useCallback((e: MouseEvent) => {
       e.preventDefault();
       if (imageFiles.length > 0) {
           if (window.confirm(language === 'ar' ? 'هل تريد إعادة تعيين مساحة العمل؟' : 'Would you like to reset the workspace?')) {
